@@ -23,11 +23,11 @@ all:
 
 run: all
 	@echo Launch the qemu ......
-	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios ../sys2-lab3/fw_jump.bin 
+	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios ~/sys2-lab3/fw_jump.bin 
 
 debug: all
 	@echo Launch the qemu for debug ......
-	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios ../sys2-lab3/fw_jump.bin -S -s
+	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios ~/sys2-lab3/fw_jump.bin -S -s
 
 clean:
 	${MAKE} -C lib clean
