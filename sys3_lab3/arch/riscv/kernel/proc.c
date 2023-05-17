@@ -1,7 +1,12 @@
 #include "proc.h"
-#include"rand.h"
+#include "rand.h"
 #include "defs.h"
-#include"mm.h"
+#include "mm.h"
+#include "vm.h"
+
+extern unsigned long uapp_start;
+extern unsigned long uapp_end;
+extern unsigned long swapper_pg_dir;
 
 extern void __dummy();
 extern void __switch_to(struct task_struct* prev, struct task_struct* next);
@@ -29,7 +34,7 @@ void task_init() {
 
     /* YOUR CODE HERE */
 
-    for(int i = 1; i < NR_TASKS; i++)
+    for(int i = 1; i <= NR_TASKS; i++)
     {
         task[i] = (struct task_struct*)kalloc();
         task[i]->state = TASK_RUNNING;
@@ -38,6 +43,46 @@ void task_init() {
         task[i]->pid = i;
         task[i]->thread.ra = (uint64)__dummy;
         task[i]->thread.sp = (uint64)(task[i]) + 0x1000;
+
+        //System3-lab4
+        // task[i]->thread_info->kernel_sp = (uint64)(task[i]) + PGSIZE;
+        // task[i]->thread_info->user_sp = kalloc();
+        task[i]->kernel_sp = (unsigned long)(task[i])+PGSIZE;
+        task[i]->user_sp = kalloc();
+
+        pagetable_t tmp_pgtbl = (pagetable_t)kalloc();
+        // swapper_pg_dir: 0xffffffe000206000
+        // tmp_pgtbl: 0xffffffe007fbb000
+        memcpy(tmp_pgtbl, &swapper_pg_dir, PGSIZE);
+        // for(int j = 0; j < 512; j++)
+        // {
+        //     tmp_pgtbl[j] &= 0xfffffffffffffffe;
+        // }
+
+        //pa = ffffffe000203100 - PA2VA_OFFSET = 0x0000000000203100
+        uint64 va = USER_START;
+        // uint64 pa = (uint64)(uapp_start) - PA2VA_OFFSET;
+        uint64 pa = 0x0000000000203100;
+        uint64 sz = 0xd76; // sz = uapp_end - uapp_start
+        create_mapping(tmp_pgtbl, va, pa, sz, 31);
+
+        va = USER_END-PGSIZE;
+        pa = task[i]->user_sp - PA2VA_OFFSET;
+        create_mapping(tmp_pgtbl, va, pa, PGSIZE, 23);
+        
+        task[i]->thread.sepc = USER_START;
+         unsigned long satp = csr_read(satp);
+        satp = (satp >> 44) << 44;
+        satp |= ((unsigned long)tmp_pgtbl-PA2VA_OFFSET) >> 12;
+        task[i]->pgd = satp;
+
+        unsigned long sstatus = csr_read(sstatus);
+        sstatus &= ~(1<<8); // set sstatus[SPP] = 0
+        sstatus |= 1<<5; // set sstatus[SPIE] = 1
+        sstatus |= 1<<18; // set sstatus[SUM] = 1
+        task[i]->thread.sstatus = sstatus;
+        task[i]->thread.sscratch = USER_END;
+
 
     }
     // 1. 参考 idle 的设置, 为 task[1] ~ task[NR_TASKS - 1] 进行初始化

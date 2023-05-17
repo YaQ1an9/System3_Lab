@@ -2,14 +2,16 @@
 #ifndef _PROC_H
 #define _PROC_H
 
-#include "types.h"
-
+// #include "types.h"
+typedef unsigned long uint64;
 #define NR_TASKS  (1 + 3) // 用于控制 最大线程数量 （idle 线程 + 3 内核线程）
 
 #define TASK_RUNNING 0 // 为了简化实验，所有的线程都只有一种状态
 
 #define PRIORITY_MIN 1
 #define PRIORITY_MAX 5
+
+typedef unsigned long* pagetable_t;
 
 /* 用于记录 `线程` 的 `内核栈与用户栈指针` */
 /* (lab6中无需考虑，在这里引入是为了之后实验的使用) */
@@ -23,6 +25,10 @@ struct thread_struct {
     uint64 ra;
     uint64 sp;
     uint64 s[12];
+
+    uint64 sepc, //保存特权态中断处理完毕后sret返回的地址
+           sstatus, // 控制信号，控制当前是否中断
+           sscratch; // 保存中断时的 sp, 用于中断处理完毕后恢复 sp
 };
 
 /* 线程数据结构 */
@@ -34,6 +40,9 @@ struct task_struct {
     uint64 pid;      // 线程id
 
     struct thread_struct thread;
+    pagetable_t pgd;
+    unsigned long kernel_sp;
+    unsigned long user_sp;
 };
 
 /* 线程初始化 创建 NR_TASKS 个线程 */ 
@@ -50,5 +59,4 @@ void switch_to(struct task_struct* next);
 
 /* dummy funciton: 一个循环程序，循环输出自己的 pid 以及一个自增的局部变量*/
 void dummy();
-
 #endif

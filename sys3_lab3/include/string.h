@@ -2,4 +2,5 @@
 
 #include "types.h"
 
-void* memset(void *, int, uint64);
+void *memset(void *, int, uint64);
+void *memcpy(void *dest, const void *src, uint64 n);

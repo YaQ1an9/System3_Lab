@@ -31,9 +31,9 @@ _start:
 	call sbi_set_timer
 	
 		# set sstatus[SIE] = 1
-	csrr t0, sstatus
-	ori  t0, t0, 1<<1
-	csrw sstatus, t0
+	#csrr t0, sstatus
+	#ori  t0, t0, 1<<1
+	#csrw sstatus, t0
 	
 	#csrr a0, mstatus
 	

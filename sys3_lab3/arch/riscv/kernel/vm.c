@@ -1,5 +1,5 @@
 // arch/riscv/kernel/vm.c
-
+/*
 extern unsigned long _stext;
 extern unsigned long _srodata;
 extern unsigned long _sdata;
@@ -11,14 +11,17 @@ extern unsigned long  _sbsss;
 #include "mm.h"
 #include "printk.h"
 #include "types.h"
+*/
 
 /* early_pgtbl: 用于 setup_vm 进行 1GB 的 映射。 */
-unsigned long early_pgtbl[512] __attribute__((__aligned__(0x1000)));
-
+/*
 #define VPN0(va) ((va >> 12) & 0x1ff)
 #define VPN1(va) ((va >> 21) & 0x1ff)
 #define VPN2(va) ((va >> 30) & 0x1ff)
-#define uint64 unsigned long 
+*/
+
+#include "vm.h"
+unsigned long early_pgtbl[512] __attribute__((__aligned__(0x1000)));
 void setup_vm(void)
 {
     /*
@@ -52,6 +55,7 @@ void setup_vm_final(void) {
 
     // mapping kernel text X|-|R|V
     //sz = (uint64)(_srodata) - (uint64)(_stext);
+    create_mapping(swapper_pg_dir, pa, pa, 0x8000000, 15);
     sz = 0x2000;
     create_mapping(swapper_pg_dir, va, pa, sz, 11);
     va += sz;
@@ -94,7 +98,7 @@ void setup_vm_final(void) {
 }
 
 
-#if 1
+#if 0
 /* 创建多级页表映射关系 */
 void create_mapping(uint64 *pgtbl, uint64 va, uint64 pa, uint64 sz, int perm) {
     /*
@@ -146,7 +150,7 @@ void create_mapping(uint64 *pgtbl, uint64 va, uint64 pa, uint64 sz, int perm) {
 }
 #endif 
 
-#if 0
+#if 1
 void create_mapping(unsigned long *root_pgtbl, unsigned long va, unsigned long pa, unsigned long sz, int perm) {
     /*
     root_pgtbl 为根页表的基地址
