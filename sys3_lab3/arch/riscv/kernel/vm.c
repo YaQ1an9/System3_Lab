@@ -190,7 +190,7 @@ void create_mapping(unsigned long *root_pgtbl, unsigned long va, unsigned long p
 
         pgtbl[0] = (unsigned long*)((pte[1] >> 10) << 12);
         vpn[0] = VPN0(va);
-        pte[0] = (perm & 15) | ((pa >> 12) << 10);
+        pte[0] = (perm & 127) | ((pa >> 12) << 10);
         pgtbl[0][vpn[0]] = pte[0];
 
         va += PGSIZE;

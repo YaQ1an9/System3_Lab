@@ -6,7 +6,6 @@
 
 struct pt_regs {
     unsigned long regs[32];
-    unsigned long sstatus;
     unsigned long sepc;
 };
 void syscall(struct pt_regs *regs);

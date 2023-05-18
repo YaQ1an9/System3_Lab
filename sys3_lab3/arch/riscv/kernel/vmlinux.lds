@@ -49,7 +49,7 @@ SECTIONS
 
         _edata = .;
 
-        . = ALIGN(0x100);
+        . = ALIGN(0x1000);
         uapp_start = .;
         *(.uapp .uapp*)
         uapp_end = .;

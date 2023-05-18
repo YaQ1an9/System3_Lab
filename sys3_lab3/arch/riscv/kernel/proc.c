@@ -39,7 +39,8 @@ void task_init() {
         task[i] = (struct task_struct*)kalloc();
         task[i]->state = TASK_RUNNING;
         task[i]->priority = rand()%(PRIORITY_MAX-PRIORITY_MIN+1)+PRIORITY_MIN;
-        task[i]->counter = task[i]->priority;
+        // task[i]->counter = task[i]->priority;
+        task[i]->counter = 1;
         task[i]->pid = i;
         task[i]->thread.ra = (uint64)__dummy;
         task[i]->thread.sp = (uint64)(task[i]) + 0x1000;
@@ -62,13 +63,12 @@ void task_init() {
         //pa = ffffffe000203100 - PA2VA_OFFSET = 0x0000000000203100
         uint64 va = USER_START;
         // uint64 pa = (uint64)(uapp_start) - PA2VA_OFFSET;
-        // uint64 pa = 0x0000000000203100 + PHY_START;;
-        uint64 pa = 0xffffffe000203100;
+        uint64 pa = 0x0000000000204000 + PHY_START;;
         uint64 sz = 0xd76; // sz = uapp_end - uapp_start
         create_mapping(tmp_pgtbl, va, pa, sz, 31);
 
         va = USER_END-PGSIZE;
-        pa = task[i]->user_sp - PA2VA_OFFSET + PHY_START;
+        pa = task[i]->user_sp - PA2VA_OFFSET;
         create_mapping(tmp_pgtbl, va, pa, PGSIZE, 23);
 
         task[i]->thread.sepc = USER_START;

@@ -146,7 +146,7 @@ _traps:
    # 3. restore sepc and 32 registers (x2(sp) should be restore last) from stack
 
 	ld t0, 32*8(sp)
-	addi t0, t0, 4
+	#addi t0, t0, 4
 	csrw sepc, t0
 
 	ld x0, 0*8(sp)
@@ -247,10 +247,6 @@ _traps_switch:
     # -----------
 
    # 3. restore sepc and 32 registers (x2(sp) should be restore last) from stack
-
-	ld t0, 32*8(sp)
-	addi t0,t0,4 		#ADDED this one
-	csrw sepc, t0
 
 	ld x0, 0*8(sp)
 	ld x1, 1*8(sp)
