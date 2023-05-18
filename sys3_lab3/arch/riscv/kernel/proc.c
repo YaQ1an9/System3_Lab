@@ -34,7 +34,7 @@ void task_init() {
 
     /* YOUR CODE HERE */
 
-    for(int i = 1; i <= NR_TASKS; i++)
+    for(int i = 1; i < NR_TASKS; i++)
     {
         task[i] = (struct task_struct*)kalloc();
         task[i]->state = TASK_RUNNING;
@@ -62,14 +62,15 @@ void task_init() {
         //pa = ffffffe000203100 - PA2VA_OFFSET = 0x0000000000203100
         uint64 va = USER_START;
         // uint64 pa = (uint64)(uapp_start) - PA2VA_OFFSET;
-        uint64 pa = 0x0000000000203100;
+        // uint64 pa = 0x0000000000203100 + PHY_START;;
+        uint64 pa = 0xffffffe000203100;
         uint64 sz = 0xd76; // sz = uapp_end - uapp_start
         create_mapping(tmp_pgtbl, va, pa, sz, 31);
 
         va = USER_END-PGSIZE;
-        pa = task[i]->user_sp - PA2VA_OFFSET;
+        pa = task[i]->user_sp - PA2VA_OFFSET + PHY_START;
         create_mapping(tmp_pgtbl, va, pa, PGSIZE, 23);
-        
+
         task[i]->thread.sepc = USER_START;
          unsigned long satp = csr_read(satp);
         satp = (satp >> 44) << 44;

@@ -74,8 +74,8 @@ __switch_to:
 __dummy:
 	#la t0, dummy
 	#csrw sepc, t0
-	li  t0, 0
-	csrw sepc, t0
+	#li  t0, 0
+	#csrw sepc, t0
 
 	csrr t0,sscratch
 	csrw sscratch, sp
