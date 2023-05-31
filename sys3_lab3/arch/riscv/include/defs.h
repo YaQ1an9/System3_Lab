@@ -41,6 +41,4 @@
                     : : "r" (__v)                   \
                     : "memory");                    \
 })
-
-#define uint64 unsigned long 
 #endif

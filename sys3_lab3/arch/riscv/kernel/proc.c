@@ -44,35 +44,29 @@ void task_init() {
         task[i]->pid = i;
         task[i]->thread.ra = (uint64)__dummy;
         task[i]->thread.sp = (uint64)(task[i]) + 0x1000;
-
-        //System3-lab4
-        // task[i]->thread_info->kernel_sp = (uint64)(task[i]) + PGSIZE;
-        // task[i]->thread_info->user_sp = kalloc();
+        pagetable_t tmp_pgtbl = (pagetable_t)kalloc();
+        memcpy(tmp_pgtbl, &swapper_pg_dir, PGSIZE);
         task[i]->kernel_sp = (unsigned long)(task[i])+PGSIZE;
         task[i]->user_sp = kalloc();
-
-        pagetable_t tmp_pgtbl = (pagetable_t)kalloc();
-        // swapper_pg_dir: 0xffffffe000206000
-        // tmp_pgtbl: 0xffffffe007fbb000
-        memcpy(tmp_pgtbl, &swapper_pg_dir, PGSIZE);
+        /*
+        //System3-lab4
         // for(int j = 0; j < 512; j++)
         // {
         //     tmp_pgtbl[j] &= 0xfffffffffffffffe;
         // }
 
-        //pa = ffffffe000203100 - PA2VA_OFFSET = 0x0000000000203100
         uint64 va = USER_START;
-        // uint64 pa = (uint64)(uapp_start) - PA2VA_OFFSET;
-        uint64 pa = 0x0000000000204000 + PHY_START;;
+        uint64 pa = 0x0000000000205000 + PHY_START;
         uint64 sz = 0xd76; // sz = uapp_end - uapp_start
         create_mapping(tmp_pgtbl, va, pa, sz, 31);
 
         va = USER_END-PGSIZE;
         pa = task[i]->user_sp - PA2VA_OFFSET;
         create_mapping(tmp_pgtbl, va, pa, PGSIZE, 23);
+        */
 
         task[i]->thread.sepc = USER_START;
-         unsigned long satp = csr_read(satp);
+        unsigned long satp = csr_read(satp);
         satp = (satp >> 44) << 44;
         satp |= ((unsigned long)tmp_pgtbl-PA2VA_OFFSET) >> 12;
         task[i]->pgd = satp;
@@ -84,7 +78,11 @@ void task_init() {
         task[i]->thread.sstatus = sstatus;
         task[i]->thread.sscratch = USER_END;
 
-
+        task[i]->mm = (struct mm_struct*)kalloc();
+        task[i]->mm->mmap = NULL;
+        do_mmap(task[i]->mm, USER_START, 0xd76, 13);
+        do_mmap(task[i]->mm, USER_END - PGSIZE, PGSIZE, 3);
+       
     }
     // 1. 参考 idle 的设置, 为 task[1] ~ task[NR_TASKS - 1] 进行初始化
     // 2. 其中每个线程的 state 为 TASK_RUNNING, counter 为 0, priority 使用 rand() 来设置, pid 为该线程在线程数组中的下标。
@@ -160,4 +158,103 @@ void switch_to(struct task_struct* next) {
     }
     else return;
 
+}
+/*
+* @mm          : current thread's mm_struct
+* @address     : the va to look up
+*
+* @return      : the VMA if found or NULL if not found
+*/
+struct vm_area_struct *find_vma(struct mm_struct *mm, uint64 addr)
+{
+    struct vm_area_struct *vma = mm->mmap;
+    while (vma != NULL) {
+        if (addr >= vma->vm_start && addr < vma->vm_end) {
+            return vma;
+        }
+        vma = vma->vm_next;
+    }
+    return NULL;
+}
+/*
+ * @mm     : current thread's mm_struct
+ * @addr   : the suggested va to map
+ * @length : memory size to map
+ * @prot   : protection
+ *
+ * @return : start va
+*/
+uint64 do_mmap(struct mm_struct *mm, uint64 addr, uint64 length, int prot)
+{
+    // 1. 首先调用 find_vma() 查找是否有重叠的 VMA
+    // 2. 如果有重叠的 VMA，根据不同的情况进行处理
+    // 3. 如果没有重叠的 VMA，调用 get_unmapped_area() 来获取一个合法的 va
+    // 4. 创建一个新的 VMA，插入到 VMA 链表中
+    // 5. 调用 create_mapping() 来创建映射关系
+    // 6. 返回 start va
+
+    /* YOUR CODE HERE */
+    struct vm_area_struct *vma = find_vma(mm, addr);
+    if(vma != NULL)
+    {
+        addr = get_unmapped_area(mm, length);
+    }
+    else
+    {
+        vma = (struct vm_area_struct*)kalloc();
+        vma->vm_start = addr;
+        vma->vm_end = addr + length;
+        vma->vm_flags = prot;
+        vma->vm_next = vma->vm_prev = NULL;
+        vma->vm_mm = mm;
+        Insert_vma(mm , vma);
+    }
+
+    return addr;
+}
+uint64 get_unmapped_area(struct mm_struct *mm, uint64 length)
+{
+    // 1. 首先从 USER_START 开始，遍历整个虚拟地址空间
+    // 2. 调用 find_vma() 查找是否有重叠的 VMA
+    // 3. 如果有重叠的 VMA，将 addr 更新为 VMA 的结束地址
+    // 4. 如果没有重叠的 VMA，返回 addr
+
+    /* YOUR CODE HERE */
+    uint64 addr = USER_START;
+    while(addr < USER_END)
+    {
+        struct vm_area_struct *vma_begin = find_vma(mm, addr);
+        struct vm_area_struct *vma_end = find_vma(mm, addr + length);
+        if(vma_begin == NULL && vma_end == NULL)
+        {
+            return addr;
+        }
+        addr += PGSIZE;
+    }
+    return 0;
+}
+void Insert_vma(struct mm_struct *mm, struct vm_area_struct *vma)
+{
+    struct vm_area_struct *vma_cur = mm->mmap;
+    if(vma_cur == NULL)
+    {
+        mm->mmap = vma;
+        return ;
+    }
+    while(vma_cur->vm_next != NULL && vma_cur->vm_next->vm_start < vma->vm_start)
+    {
+        vma_cur = vma_cur->vm_next;
+    }
+    if(vma_cur->vm_next == NULL)
+    {
+        vma_cur->vm_next = vma;
+        vma->vm_prev = vma_cur;
+    }
+    else
+    {
+        vma->vm_next = vma_cur->vm_next;
+        vma_cur->vm_next->vm_prev = vma;
+        vma_cur->vm_next = vma;
+        vma->vm_prev = vma_cur;
+    }
 }

@@ -64,7 +64,7 @@ void setup_vm_final(void) {
     // mapping kernel rodata -|-|R|V
     //sz = (uint64)_sdata - (uint64)_srodata;
     sz = 0x1000;
-    create_mapping(swapper_pg_dir, va, pa, sz, 3);
+    create_mapping(swapper_pg_dir, va, pa, sz, 15); //3
     va += sz;
     pa += sz;
   

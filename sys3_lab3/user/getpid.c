@@ -23,15 +23,15 @@ static inline long fork()
 }
 
 
-// int main() {
-//     register unsigned long current_sp __asm__("sp");
-//     while (1) {
-//         printf("[U-MODE] pid: %ld, sp is %lx\n", getpid(), current_sp);
-//         for (unsigned int i = 0; i < 0x4FFFFFFF; i++);
-//     }
+int main() {
+    register unsigned long current_sp __asm__("sp");
+    while (1) {
+        printf("[U-MODE] pid: %ld, sp is %lx\n", getpid(), current_sp);
+        for (unsigned int i = 0; i < 0x4FFFFFFF; i++);
+    }
 
-//     return 0;
-// }
+    return 0;
+}
 
 // int main() {
 //     int pid;
@@ -53,17 +53,17 @@ static inline long fork()
 //     return 0;
 // }
 
-int main() {
-  int pid;
-  pid = fork();
-  if(pid > 0)
-    printf("[PID = %d] fork [PID = %d]\n", getpid(), pid);
-  pid = fork();
-  if(pid > 0)
-    printf("[PID = %d] fork [PID = %d]\n", getpid(), pid);
+// int main() {
+//   int pid;
+//   pid = fork();
+//   if(pid > 0)
+//     printf("[PID = %d] fork [PID = %d]\n", getpid(), pid);
+//   pid = fork();
+//   if(pid > 0)
+//     printf("[PID = %d] fork [PID = %d]\n", getpid(), pid);
 
-  while(1) {
-      printf("[PID = %d] is running!\n", getpid());
-      for (unsigned int i = 0; i < 0x4FFFFFFF; i++);
-  }
-}
+//   while(1) {
+//       printf("[PID = %d] is running!\n", getpid());
+//       for (unsigned int i = 0; i < 0x4FFFFFFF; i++);
+//   }
+// }

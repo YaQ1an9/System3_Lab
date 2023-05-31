@@ -10,6 +10,9 @@ typedef unsigned long uint64;
 
 #define PRIORITY_MIN 1
 #define PRIORITY_MAX 5
+#define VM_READ     0x00000001
+#define VM_WRITE    0x00000002
+#define VM_EXEC     0x00000004
 
 typedef unsigned long* pagetable_t;
 
@@ -43,6 +46,7 @@ struct task_struct {
     pagetable_t pgd;
     unsigned long kernel_sp;
     unsigned long user_sp;
+    struct mm_struct *mm;
 };
 
 /* 线程初始化 创建 NR_TASKS 个线程 */ 
@@ -59,4 +63,25 @@ void switch_to(struct task_struct* next);
 
 /* dummy funciton: 一个循环程序，循环输出自己的 pid 以及一个自增的局部变量*/
 void dummy();
+
+struct vm_area_struct {
+    struct mm_struct *vm_mm;    /* The mm_struct we belong to. */
+    uint64 vm_start;          /* Our start address within vm_mm. */
+    uint64 vm_end;            /* The first byte after our end address 
+                                    within vm_mm. */
+
+    /* linked list of VM areas per task, sorted by address */
+    struct vm_area_struct *vm_next, *vm_prev;
+
+    uint64 vm_flags;      /* Flags as listed above. */
+};
+
+struct mm_struct {
+    struct vm_area_struct *mmap;       /* list of VMAs */
+};
+
+struct vm_area_struct *find_vma(struct mm_struct *mm, uint64 addr);
+uint64 do_mmap(struct mm_struct *mm, uint64 addr, uint64 length, int prot);
+uint64 get_unmapped_area(struct mm_struct *mm, uint64 length);
+void Insert_vma(struct mm_struct *mm, struct vm_area_struct *vma);
 #endif
