@@ -1,13 +1,21 @@
 // trap.c 
-#include"printk.h"
+#include "printk.h"
 #include "clock.h"
 #include "defs.h"
 #include "../include/proc.h"
 #include "../../../user/syscall.h"
-extern struct task_struct *current;
-extern void syscall(struct pt_regs *regs);;
 
-void trap_handler(unsigned long scause, unsigned long sepc, struct pt_regs* regs) {
+extern void ret_from_fork(struct pt_regs *regs);
+extern struct task_struct *current;
+extern struct task_struct *task[NR_TASKS];
+extern uint64 task_counter;
+extern void syscall(struct pt_regs *regs);
+extern unsigned long swapper_pg_dir;
+void forkret();
+uint64 clone(struct pt_regs *regs) ;
+
+void trap_handler(unsigned long scause, unsigned long sepc, struct pt_regs* regs) 
+{
     
     if ((scause & (1LL << 63)) == (1LL << 63)) {
         // if (scause & (1UL << 4) == (1UL << 4)) {
@@ -21,24 +29,24 @@ void trap_handler(unsigned long scause, unsigned long sepc, struct pt_regs* regs
     else {
         if(scause == 8)
         {
-            // syscall(regs);
             // printk("[S] Systemcall\n");
-            if(regs->regs[17] == SYS_WRITE)
-            {
-                if(regs->regs[10] == 1)
-                {
-                    ((char*)(regs->regs[11]))[regs->regs[12]] = '\0';
-                    regs->regs[10] = printk((char*)(regs->regs[11]));
-                }
-            }
-            else if(regs->regs[17] == SYS_GETPID)
-            {
-                regs->regs[10] = current->pid;
-            }
-            else
-            {
-                printk("unknown syscall!\n");
-            }
+            syscall(regs);
+            // if(regs->regs[17] == SYS_WRITE)
+            // {
+            //     if(regs->regs[10] == 1)
+            //     {
+            //         ((char*)(regs->regs[11]))[regs->regs[12]] = '\0';
+            //         regs->regs[10] = printk((char*)(regs->regs[11]));
+            //     }
+            // }
+            // else if(regs->regs[17] == SYS_GETPID)
+            // {
+            //     regs->regs[10] = current->pid;
+            // }
+            // else
+            // {
+            //     printk("unknown syscall!\n");
+            // }
             regs->sepc += 4;
         }
         else if(scause == 12)
@@ -62,7 +70,82 @@ void trap_handler(unsigned long scause, unsigned long sepc, struct pt_regs* regs
     }
 }
 
-void do_page_fault(struct pt_regs *regs) {
+void syscall(struct pt_regs *regs)
+{
+    if(regs->regs[17] == SYS_WRITE)
+    {
+        if(regs->regs[10] == 1)
+        {
+            ((char*)(regs->regs[11]))[regs->regs[12]] = '\0';
+            regs->regs[10] = printk((char*)(regs->regs[11]));
+        }
+    }
+    else if(regs->regs[17] == SYS_GETPID)
+    {
+        regs->regs[10] = current->pid;
+    }
+    else if(regs->regs[17] == SYS_CLONE)
+    {
+        regs->regs[10] = clone(regs);
+    }
+    else
+    {
+        printk("unknown syscall!\n");
+    }
+}
+void forkret() {
+    ret_from_fork(current->trapframe);
+}
+
+uint64 do_fork(struct pt_regs *regs) 
+{
+    task[task_counter] = (struct task_struct*)kalloc();
+    task[task_counter]->state = TASK_RUNNING;
+    task[task_counter]->counter = 2;
+    task[task_counter]->priority = 1;
+    task[task_counter]->pid = task_counter;
+    task[task_counter]->user_sp = kalloc();
+    memcpy(task[task_counter]->user_sp, current->user_sp, PGSIZE);
+    
+    task[task_counter]->thread.ra = (uint64)forkret;
+    task[task_counter]->thread.sp = task[task_counter]->thread.sscratch 
+                                  = task[task_counter]->kernel_sp
+                                  = (uint64)(task[task_counter]) + 0x1000;
+    task[task_counter]->thread.sepc = regs->sepc;
+
+    unsigned long sstatus = csr_read(sstatus);
+    sstatus &= ~(1<<8); // set sstatus[SPP] = 0
+    sstatus |= 1<<5; // set sstatus[SPIE] = 1
+    sstatus |= 1<<18; // set sstatus[SUM] = 1
+    task[task_counter]->thread.sstatus = sstatus;
+
+    pagetable_t tmp_pgtbl = (pagetable_t)kalloc();
+    memcpy(tmp_pgtbl, &swapper_pg_dir, PGSIZE);
+    unsigned long satp = csr_read(satp);
+    satp = (satp >> 44) << 44;
+    satp |= ((unsigned long)tmp_pgtbl-PA2VA_OFFSET) >> 12;
+    task[task_counter]->pgd = satp;
+
+    task[task_counter]->mm = (struct mm_struct*)kalloc();
+    memcpy(task[task_counter]->mm, current->mm, PGSIZE);
+    task[task_counter]->trapframe = kalloc();
+    memcpy(task[task_counter]->trapframe, regs, sizeof(struct pt_regs));
+    uint64 sscratch = csr_read(sscratch);
+    task[task_counter]->trapframe->regs[2] = sscratch;
+    task[task_counter]->trapframe->regs[10] = 0;
+    task[task_counter]->trapframe->sepc += 4;
+    task_counter++;
+
+    return task[task_counter - 1]->pid;
+}
+
+uint64 clone(struct pt_regs *regs) 
+{
+    return do_fork(regs);
+}
+
+void do_page_fault(struct pt_regs *regs) 
+{
     /*
     1. 通过 stval 获得访问出错的虚拟内存地址（Bad Address）
     2. 通过 scause 获得当前的 Page Fault 类型

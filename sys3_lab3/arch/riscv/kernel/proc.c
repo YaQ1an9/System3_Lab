@@ -13,6 +13,7 @@ extern void __switch_to(struct task_struct* prev, struct task_struct* next);
 struct task_struct* idle;           // idle process
 struct task_struct* current;        // 指向当前运行线程的 `task_struct`
 struct task_struct* task[NR_TASKS]; // 线程数组，所有的线程都保存在此
+uint64 task_counter = 1;            // 线程计数器，用于为新建立的线程分配 pid
 
 void task_init() {
     // 1. 调用 kalloc() 为 idle 分配一个物理页
@@ -34,13 +35,13 @@ void task_init() {
 
     /* YOUR CODE HERE */
 
-    for(int i = 1; i < NR_TASKS; i++)
+    for(int i = 1; i <= 1; i++)
     {
         task[i] = (struct task_struct*)kalloc();
         task[i]->state = TASK_RUNNING;
         task[i]->priority = rand()%(PRIORITY_MAX-PRIORITY_MIN+1)+PRIORITY_MIN;
         // task[i]->counter = task[i]->priority;
-        task[i]->counter = 1;
+        task[i]->counter = 2;
         task[i]->pid = i;
         task[i]->thread.ra = (uint64)__dummy;
         task[i]->thread.sp = (uint64)(task[i]) + 0x1000;
@@ -82,7 +83,7 @@ void task_init() {
         task[i]->mm->mmap = NULL;
         do_mmap(task[i]->mm, USER_START, 0xd76, 13);
         do_mmap(task[i]->mm, USER_END - PGSIZE, PGSIZE, 3);
-       
+        task_counter++;
     }
     // 1. 参考 idle 的设置, 为 task[1] ~ task[NR_TASKS - 1] 进行初始化
     // 2. 其中每个线程的 state 为 TASK_RUNNING, counter 为 0, priority 使用 rand() 来设置, pid 为该线程在线程数组中的下标。
@@ -103,6 +104,7 @@ void do_timer()
         current->counter--;
         if(current->counter > 0) return ;
         else schedule();        
+        // schedule();
     }
 
 }
@@ -110,18 +112,16 @@ void do_timer()
 void schedule()
 {
     struct task_struct* next = current;
-    next = task[(current->pid) % 3 + 1];
-    if(current == task[3] || current == task[0])
+    next = task[(current->pid) % (task_counter - 1) + 1];
+    if(current == task[task_counter - 1] || current == task[0])
     {
-    	for (int i = 1; i < NR_TASKS; i++) 
+    	for (int i = 1; i < task_counter; i++) 
     	{
           task[i]->counter = rand()%(PRIORITY_MAX-PRIORITY_MIN+1)+PRIORITY_MIN;
           if (i == 1) printk("\n");
           printk("SET [PID = %d PRIORITY = %d COUNTER = %d]\n", task[i]->pid, task[i]->priority, task[i]->counter);
         }
     }
-    
-    
     switch_to(next);
 }
 

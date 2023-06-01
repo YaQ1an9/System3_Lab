@@ -3,6 +3,7 @@
     .globl _traps 
     .global __dummy
     .globl __switch_to
+	.global ret_from_fork
 __switch_to:
     # save state to prev process
     addi t0, a0, 40
@@ -87,7 +88,7 @@ __dummy:
 _traps:
 
 	csrr t0, sscratch
-	beq t0, x0, _traps_switch
+	beq t0, x0, _traps_switch	#判断是否需要栈切换
 	
 	csrr t0, sscratch
 	csrw sscratch, sp
@@ -289,3 +290,42 @@ _traps_switch:
         
 
     # -----------
+ret_from_fork:
+	addi t0, a0, 0
+	ld x0, 0*8(t0)
+	ld x1, 1*8(t0)
+	ld x2, 2*8(t0)
+	ld x3, 3*8(t0)
+	ld x4, 4*8(t0)
+	ld x6, 6*8(t0)
+	ld x7, 7*8(t0)
+	ld x8, 8*8(t0)
+	ld x9, 9*8(t0)
+	ld x10, 10*8(t0)
+	ld x11, 11*8(t0)
+	ld x12, 12*8(t0)
+	ld x13, 13*8(t0)
+	ld x14, 14*8(t0)
+	ld x15, 15*8(t0)
+	ld x16, 16*8(t0)
+	ld x17, 17*8(t0)
+	ld x18, 18*8(t0)
+	ld x19, 19*8(t0)
+	ld x20, 20*8(t0)
+	ld x21, 21*8(t0)
+	ld x22, 22*8(t0)
+	ld x23, 23*8(t0)
+	ld x24, 24*8(t0)
+	ld x25, 25*8(t0)
+	ld x26, 26*8(t0)
+	ld x27, 27*8(t0)
+	ld x28, 28*8(t0)
+	ld x29, 29*8(t0)
+	ld x30, 30*8(t0)
+	ld x31, 31*8(t0)
+
+	ld t1, 	32*8(t0)
+	csrw sepc, t1
+	
+	ld x5, 5*8(t0)
+	sret

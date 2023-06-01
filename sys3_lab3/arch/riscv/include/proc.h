@@ -4,7 +4,7 @@
 
 // #include "types.h"
 typedef unsigned long uint64;
-#define NR_TASKS  (1 + 3) // 用于控制 最大线程数量 （idle 线程 + 3 内核线程）
+#define NR_TASKS  (1 + 5) // 用于控制 最大线程数量 （idle 线程 + 3 内核线程）
 
 #define TASK_RUNNING 0 // 为了简化实验，所有的线程都只有一种状态
 
@@ -17,7 +17,7 @@ typedef unsigned long uint64;
 typedef unsigned long* pagetable_t;
 
 /* 用于记录 `线程` 的 `内核栈与用户栈指针` */
-/* (lab6中无需考虑，在这里引入是为了之后实验的使用) */
+/* (sys2-lab6中无需考虑，在这里引入是为了之后实验的使用) */
 struct thread_info {
     uint64 kernel_sp;
     uint64 user_sp;
@@ -47,6 +47,8 @@ struct task_struct {
     unsigned long kernel_sp;
     unsigned long user_sp;
     struct mm_struct *mm;
+    struct pt_regs *trapframe;
+    
 };
 
 /* 线程初始化 创建 NR_TASKS 个线程 */ 
