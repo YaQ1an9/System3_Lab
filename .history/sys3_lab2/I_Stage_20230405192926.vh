@@ -1,8 +1,0 @@
-`ifndef I_STAGE_H
-`define I_STAGE_H
-
-parameter   IDLE = 2'b00,
-            CompareTag = 2'b01,
-            
-
-`endif

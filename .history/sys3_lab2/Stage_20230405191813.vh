@@ -1,2 +1,0 @@
-`ifndef STAGE_H
-`
