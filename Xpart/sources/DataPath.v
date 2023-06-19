@@ -1,60 +1,57 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2022/06/06 22:05:07
-// Design Name: 
-// Module Name: DataPath
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 module Datapath(
     input clk,
     input rst,
     input [31:0] inst_in,
-    input [31:0] pc_in,
-    input [31:0] data_in,
-    output mem_write,
-    output  [31:0] addr_out,
-    output  [31:0] data_out,
-    output [31:0] reg_data,
-    output [31:0] gp,
+    input [63:0] pc_in,
+    // for data_memory
+    input [63:0] ram_data_out,
+    output MEM_mem_write,
+    output  [63:0] MEM_alu_result,
+    output  [63:0] MEM_alu_data2_forward,
+    output  [2:0] MEM_mem_size,
+    //
+    //for stall_con
+    input stall,
+    output EX_mem_read,
+    output [1:0]EX_pc_src,
+    output [1:0]MEM_pc_src,
+    output [1:0]WB_pc_src,
+    output [4:0]EX_rd,
+    output [4:0]ID_rs1,
+    output [4:0]ID_rs2,
+    output EX_csr_write,
+    output EX_ecall_sign,
+    output MEM_ecall_sign,
+    //
+    output [63:0] reg_data,
+    output [63:0] gp,
+    output [63:0] Satp,
     output [1:0] info_changed,
-    output  [31:0]pc_out
+    output [63:0]pc_out
 );
   wire Jump;      //EX ???????????
   wire mem_read;  // ID
-  wire stall;
-  wire [31:0]ID_imme;
+  wire mem_write;
+  wire [63:0]ID_imme;
   wire zero;
-  wire [31:0]pc_order;
-  wire [31:0]pc_order1;
-  wire [31:0]pc_new;
-  wire [31:0]pc_new_final;
-  wire [31:0] pc_new_final_normal;
+  wire [63:0]pc_order;
+  wire [63:0]pc_order1;
+  wire [63:0]pc_new;
+  wire [63:0]pc_new_final;
+  wire [63:0] pc_new_final_normal;
   
-  wire [31:0] mtvec, EX_mtvec, MEM_mtvec;
-  wire [1:0]pc_src;
-  wire [31:0]pc_jump;
+  wire [63:0] sys_addr;
+  wire [1:0] pc_src;
+  wire [63:0]pc_jump;
   wire [2:0] b_type;
+  wire [2:0] mem_size;
     
-  wire ecall_sign, EX_ecall_sign, MEM_ecall_sign;
+  wire ecall_sign;
     
   wire [31:0] ID_inst;
-  wire [31:0] ID_pc;
-  wire [4:0]  ID_rs1;
-  wire [4:0]  ID_rs2;
+  wire [63:0] ID_pc;
   wire [4:0]  ID_rd;
   wire branch;
   wire [3:0]alu_op;
@@ -62,55 +59,48 @@ module Datapath(
   wire alu_src_b;
   wire alu_src_a;
   wire [1:0]mem_to_reg;
-  wire [31:0]rd_data1_gp,rd_data2_gp;
-  wire [31:0]rd_data1_csr;
-  wire [31:0]rd_data1, rd_data2;
-  wire [31:0]EX_alu_data1;
-  wire [31:0]EX_alu_data2;
-  wire [31:0] EX_alu_data1_forward;
-  wire [31:0] EX_alu_data2_forward;
+  wire [63:0]rd_data1_gp,rd_data2_gp;
+  wire [63:0]rd_data1_csr;
+  wire [63:0]rd_data1, rd_data2;
+  wire [63:0]EX_alu_data1;
+  wire [63:0]EX_alu_data2;
+  wire [63:0] EX_alu_data1_forward;
+  wire [63:0] EX_alu_data2_forward;
     
   wire [31:0] EX_inst;
-  wire [31:0] EX_alu_result;
-  wire [31:0] EX_reg_data1;
-  wire [31:0] EX_reg_data2;
-  wire [31:0] EX_reg_data1_final;
-  wire [31:0] EX_imme;
+  wire [63:0] EX_alu_result;
+  wire [63:0] EX_reg_data1;
+  wire [63:0] EX_reg_data2;
+  wire [63:0] EX_reg_data1_final;
+  wire [63:0] EX_imme;
   wire [3:0]  EX_alu_op;
-  wire [31:0] EX_pc;
-  wire [1:0]  EX_pc_src;
-  wire [31:0] EX_pc_jump;     
-  wire [31:0] EX_pc_jump_1;       //pc+imme;
-  wire [4:0]  EX_rd;
+  wire [63:0] EX_pc;
+  wire [63:0] EX_pc_jump;     
+  wire [63:0] EX_pc_jump_1;       //pc+imme;
   wire [4:0]  EX_rs1;
   wire [4:0]  EX_rs2;
   wire [1:0]  EX_mem_to_reg;
   wire EX_branch;
   wire [2:0] EX_b_type;
-  wire EX_alu_sec_b;
+  wire [2:0] EX_mem_size;
+  wire EX_alu_src_b;
     
-  wire [31:0] MEM_pc;
-  wire [31:0] MEM_pc_jump_1;
-  wire [31:0] MEM_pc_jump;
-  wire [31:0] MEM_alu_result;
-  wire [31:0] MEM_imme;
+  wire [63:0] MEM_pc;
+  wire [63:0] MEM_pc_jump_1;
+  wire [63:0] MEM_pc_jump;
+  wire [63:0] MEM_imme;
   wire [4:0]  MEM_rd;
   wire [4:0]  MEM_rs1;
   wire [4:0]  MEM_rs2;
-  wire [31:0] MEM_reg_data2;
-  wire [31:0] MEM_alu_data2_forward;
+  wire [63:0] MEM_reg_data2;
   wire [1:0]  MEM_mem_to_reg;
-  wire [1:0]  MEM_pc_src;
-  wire [31:0] ram_data_out;
-    
   
   wire [4:0] WB_rd;
-  wire [31:0]WB_alu_result;
-  wire [31:0]WB_data_to_reg;
-  wire [31:0]WB_pc;
-  wire [1:0] WB_pc_src;
-  wire [31:0]WB_ram_data_out;
-  wire [31:0]WB_imme;
+  wire [63:0]WB_alu_result;
+  wire [63:0]WB_data_to_reg;
+  wire [63:0]WB_pc;
+  wire [63:0]WB_ram_data_out;
+  wire [63:0]WB_imme;
   wire [1:0] WB_mem_to_reg;
     
   wire [1:0]ForwardA;
@@ -118,7 +108,7 @@ module Datapath(
   wire EX_Find;
   wire ID_Find;
   wire IF_Find;
-  wire [31:0]pc_predicted;
+  wire [63:0]pc_predicted;
   wire Real_take;
   wire Pred_take;
   wire ID_Pred_take;
@@ -126,7 +116,7 @@ module Datapath(
   wire bubble_sign;
   qjq pc1(
   .x(pc_in),
-  .y(32'h4),
+  .y(64'h4),
   .cin(0),
   .s(pc_order1),
   .cout()             // ??pc + 4 ?????
@@ -153,7 +143,7 @@ module Datapath(
   .pc_order(pc_order1),
   .pc_jump_1(EX_pc_jump_1),
   .pc_jump_2(EX_alu_result),
-  .mtvec(mtvec),
+  .sys_addr(sys_addr),
   .pc_src(EX_pc_src),
   .jump(Jump),
   .Pred_take(Pred_take),
@@ -201,7 +191,6 @@ module Datapath(
   .clk(clk),
   .rst(rst),
   .ecall_sign(ecall_sign),
-  .mtvec(rd_data1_csr),
   .pc_new_final(pc_new_final),
   .pc_out(pc_out) 
   );
@@ -250,11 +239,11 @@ module Datapath(
   .pc(pc_in),
   .din(EX_alu_data1),
   .dout(rd_data1_csr),
-  .mtvec(mtvec)
-  
+  .Satp(Satp),
+  .sys_addr(sys_addr)
   );
     
-  MUX2T1_32 mux_csr(
+  MUX2T1_64 mux_csr(
   .I0(rd_data1_gp),
   .I1(rd_data1_csr),
   .s(csr_read),
@@ -267,23 +256,24 @@ module Datapath(
   .imme(ID_imme)
   );
     
-  Stall stall_con(
-  .EX_mem_read(EX_mem_read),
-  .EX_pc_src(EX_pc_src),
-  .MEM_pc_src(MEM_pc_src),
-  .WB_pc_src(WB_pc_src),
-  .EX_rd(EX_rd),
-  .ID_rs1(ID_rs1),
-  .ID_rs2(ID_rs2),
-  .EX_csr_write(EX_csr_write),
-  .EX_ecall_sign(EX_ecall_sign),
-  .MEM_ecall_sign(MEM_ecall_sign),
-  .stall(stall)
-  );
+  // Stall stall_con(
+  // .EX_mem_read(EX_mem_read),
+  // .EX_pc_src(EX_pc_src),
+  // .MEM_pc_src(MEM_pc_src),
+  // .WB_pc_src(WB_pc_src),
+  // .EX_rd(EX_rd),
+  // .ID_rs1(ID_rs1),
+  // .ID_rs2(ID_rs2),
+  // .EX_csr_write(EX_csr_write),
+  // .EX_ecall_sign(EX_ecall_sign),
+  // .MEM_ecall_sign(MEM_ecall_sign),
+  // .stall(stall)
+  // );
     
   Control control ( 
   .op_code(ID_inst[6:0]),
   .funct3(ID_inst[14:12]),
+  .funct7(ID_inst[31:25]),
   .funct7_5(ID_inst[30]),
   .stall(stall),
   .pc_src(pc_src),         
@@ -297,6 +287,7 @@ module Datapath(
   .mem_to_reg(mem_to_reg),
   .mem_read(mem_read), 
   .mem_write(mem_write),   
+  .mem_size(mem_size),
   .branch(branch),         
   .b_type(b_type)          
   );
@@ -304,6 +295,7 @@ module Datapath(
   ID_EXE id_exe(
   .clk(clk),
   .rst(rst),
+  .stall(stall),
   .bubble_sign(bubble_sign),  //need bubble_sign
   .ID_imme(ID_imme),
   .ID_pc(ID_pc),
@@ -319,6 +311,7 @@ module Datapath(
   .mem_write(mem_write),
   .branch(branch),
   .b_type(b_type),
+  .mem_size(mem_size),
   .rd_data1(rd_data1),
   .rd_data2(rd_data2_gp),
   .ID_rd(ID_rd),
@@ -348,6 +341,7 @@ module Datapath(
   .EX_mem_write(EX_mem_write),
   .EX_branch(EX_branch),
   .EX_pc(EX_pc),
+  .EX_mem_size(EX_mem_size),
   .EX_b_type(EX_b_type)
   );
         
@@ -362,32 +356,29 @@ module Datapath(
   .ForwardB(ForwardB)
   );
         
-  MUX2T1_32 for_auipc(
+  MUX2T1_64 for_auipc(
   .I0(EX_reg_data1),
   .I1(EX_pc),
   .s(EX_alu_src_a),
   .o(EX_reg_data1_final)
   );
         
-        
-        
-        
-  MUX4T1_32 Alu_1(
+  MUX4T1_64 Alu_1(
   .I0(EX_reg_data1_final),
   .I1(WB_data_to_reg),
   .I2(MEM_alu_result),
-  .I3(32'h0),
+  .I3(64'h0),
   .s(ForwardA),
   .o(EX_alu_data1_forward)
   );
-  MUX2T1_32  Alu_1_imme(
+  MUX2T1_64  Alu_1_imme(
   .I0(EX_alu_data1_forward),
   .I1(MEM_imme),
   .s(MEM_mem_to_reg[0]&&~MEM_mem_to_reg[1]&&ForwardA ==2'b10),
   .o(EX_alu_data1)
   ); 
         
-  MUX4T1_32 Alu_2(
+  MUX4T1_64 Alu_2(
   .I0(EX_reg_data2),
   .I1(WB_data_to_reg),
   .I2(MEM_alu_result),
@@ -395,7 +386,7 @@ module Datapath(
   .s(ForwardB),
   .o(EX_alu_data2_forward)
   );
-  MUX2T1_32  Alu_2_imme(
+  MUX2T1_64  Alu_2_imme(
   .I0(EX_alu_data2_forward),
   .I1(EX_imme),
   .s(EX_alu_src_b),
@@ -420,6 +411,7 @@ module Datapath(
   .EX_mem_to_reg(EX_mem_to_reg),
   .EX_mem_read(EX_mem_read),
   .EX_mem_write(EX_mem_write),
+  .EX_mem_size(EX_mem_size),
   .EX_rd(EX_rd),
   .EX_rs1(EX_rs1),
   .EX_rs2(EX_rs2),
@@ -443,16 +435,18 @@ module Datapath(
   .MEM_pc(MEM_pc),
   .MEM_mem_to_reg(MEM_mem_to_reg),
   .MEM_mem_read(MEM_mem_read),
+  .MEM_mem_size(MEM_mem_size),
   .MEM_mem_write(MEM_mem_write)
   );
-    
-  Data_memory data_memory(
-  .clk(clk),
-  .addr(MEM_alu_result),
-  .MEM_mem_write(MEM_mem_write),
-  .data_to_ram(MEM_alu_data2_forward),
-  .ram_data_out(ram_data_out)
-  );
+   
+  // Data_memory data_memory(
+  // .clk(clk),
+  // .addr(MEM_alu_result),
+  // .MEM_mem_write(MEM_mem_write),
+  // .data_to_ram(MEM_alu_data2_forward),
+  // .MEM_mem_size(MEM_mem_size),
+  // .ram_data_out(ram_data_out)
+  // );
         
   MEM_WB mem_wb(
   .clk(clk),
@@ -477,7 +471,7 @@ module Datapath(
   .WB_mem_write(WB_mem_write)
   );
         
-  MUX4T1_32 reg_wb_data_mux(
+  MUX4T1_64 reg_wb_data_mux(
   .I0(WB_alu_result),
   .I1(WB_imme),
   .I2(WB_pc+4),
@@ -488,9 +482,3 @@ module Datapath(
   assign reg_data = WB_data_to_reg;
 
 endmodule
-
-
-
-
-
-

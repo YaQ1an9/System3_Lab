@@ -1,32 +1,11 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 09/29/2022 11:16:18 AM
-// Design Name: 
-// Module Name: MUX_4
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
-
- module MUX4T1_32(
- input [31:0]I0,
- input [31:0]I1,
- input [31:0]I2,
- input [31:0]I3,
+ module MUX4T1_64(
+ input [63:0]I0,
+ input [63:0]I1,
+ input [63:0]I2,
+ input [63:0]I3,
  input [1:0]s,
- output reg [31:0]o
+ output reg [63:0]o
  );
  always@(*)
  begin

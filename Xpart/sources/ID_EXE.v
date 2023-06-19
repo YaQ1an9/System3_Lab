@@ -1,31 +1,12 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 09/29/2022 10:03:31 PM
-// Design Name: 
-// Module Name: ID_EXE
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module ID_EXE(
     input clk,
     input rst,
+    input stall,
     input bubble_sign,
-    input [31:0]ID_imme,
-    input [31:0]ID_pc,
+    input [63:0]ID_imme,
+    input [63:0]ID_pc,
     input [31:0]ID_inst,
     input [1:0]pc_src,
     input reg_write,
@@ -38,8 +19,9 @@ module ID_EXE(
     input mem_write,
     input branch,
     input [2:0]b_type,
-    input [31:0]rd_data1,
-    input [31:0]rd_data2,
+    input [2:0]mem_size,
+    input [63:0]rd_data1,
+    input [63:0]rd_data2,
     input [4:0]ID_rd,
     input [4:0]ID_rs1,
     input [4:0]ID_rs2,
@@ -50,12 +32,12 @@ module ID_EXE(
     output reg EX_Find,
     output reg EX_ecall_sign,
     output reg [31:0]EX_inst,
-    output reg [31:0]EX_rd_data1,
-    output reg [31:0]EX_rd_data2,
+    output reg [63:0]EX_rd_data1,
+    output reg [63:0]EX_rd_data2,
     output reg [4:0]EX_rd,
     output reg [4:0]EX_rs1,
     output reg [4:0]EX_rs2,
-    output reg [31:0]EX_imme,
+    output reg [63:0]EX_imme,
     output reg [1:0]EX_pc_src,
     output reg EX_reg_write,
     output reg EX_csr_write,
@@ -66,16 +48,17 @@ module ID_EXE(
     output reg EX_mem_read,
     output reg EX_mem_write,
     output reg EX_branch,
-    output reg [31:0]EX_pc,
+    output reg [63:0]EX_pc,
+    output reg [2:0]EX_mem_size,
     output reg [2:0]EX_b_type
     );
     always @(posedge clk,posedge rst)
     begin
-        if(rst || bubble_sign)
+        if(rst || bubble_sign || stall)
             begin
-                EX_rd_data1 <= 32'h0;
-                EX_rd_data2 <= 32'h0;
-                EX_imme <= 32'h0;
+                EX_rd_data1 <= 63'h0;
+                EX_rd_data2 <= 63'h0;
+                EX_imme <= 63'h0;
                 EX_rd <= 5'h0; 
                 EX_rs1 <= 5'h0;
                 EX_rs2 <= 5'h0;
@@ -92,10 +75,10 @@ module ID_EXE(
     end
     always @(posedge clk,posedge rst)
     begin
-        if(rst || bubble_sign)
+        if(rst || bubble_sign || stall)
             begin
-                EX_pc <= 32'h0;
-                EX_inst <=32'h0;
+                EX_pc <= 63'h0;
+                EX_inst <=63'h0;
                 EX_pc_src <= 2'h0;
                 EX_reg_write <= 1'h0;
                 EX_csr_write <= 1'h0;
@@ -104,6 +87,7 @@ module ID_EXE(
                 EX_alu_op <=4'h0;
                 EX_mem_to_reg <= 1'h0;
                 EX_mem_read   <= 1'h0;
+                EX_mem_size <= 3'b0;
                 EX_mem_write <= 1'h0;
                 EX_branch <= 1'h0;
                 EX_b_type <= 1'h0;
@@ -125,6 +109,7 @@ module ID_EXE(
                 EX_mem_to_reg <= mem_to_reg;
                 EX_mem_read   <= mem_read;
                 EX_mem_write <= mem_write;
+                EX_mem_size <= mem_size;
                 EX_branch <= branch;
                 EX_b_type <= b_type;
                 EX_Find <= ID_Find;
