@@ -67,7 +67,7 @@ module Control(
             7'b0011011:
             begin
                 case(funct3)
-                  3'b000:begin pc_src = 2'b00; reg_write = 1; alu_src_b = 1; alu_op = 4'b0000; mem_to_reg = 2'b00; mem_write = 0;mem_read = 0; branch = 0; b_type = 0; ill_instr = 0;end  //ADDIW
+                  3'b000:begin pc_src = 2'b00; reg_write = 1; alu_src_b = 1; alu_op = 4'b1011; mem_to_reg = 2'b00; mem_write = 0;mem_read = 0; branch = 0; b_type = 0; ill_instr = 0;end  //ADDIW
                   3'b001:begin pc_src = 2'b00; reg_write = 1; alu_src_b = 1; alu_op = 4'b1010; mem_to_reg = 2'b00; mem_write = 0;mem_read = 0; branch = 0; b_type = 0; ill_instr = 0; end    //SLLIW
                 endcase
             end

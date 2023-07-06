@@ -7,6 +7,7 @@
  output zero
  );
  `include "AluOp.vh"
+ reg [63:0]tmp;
  always @(*)
  case (EX_alu_op)
     ADD: res = a + b;
@@ -23,6 +24,10 @@
     NOP:res = a;
     CMP: res = ((a[63] == 1'b0 && b[63] == 1'b1)||(a[63] == 1'b0 && b[63] == 1'b0 && a > b)||(a[63] == 1'b1 && b[63] == 1'b1 && a < b)) ? 64'h1 : ((a == b) ? 64'h0 : 64'hffffffffffffffff);
     CMP_U: res = (a > b) ? 64'h1 : ((a==b) ? 64'h0 : 64'hffffffffffffffff);
+    ADDIW: begin
+      tmp = a + b;
+      res = (tmp[31] == 1'b1)?({32'hffffffff, tmp[31:0]}) : ({32'h0, tmp[31:0]});
+      end
     default: res = 0;
  endcase
  endmodule

@@ -32,7 +32,7 @@ module Data_memory(
     .we(MEM_mem_write),
     .size(MEM_mem_size),
     .write_data(data_to_ram),
-    .address(addr[13:3]),
+    .address(addr[17:3]),
     .read_data(ram_data_out),
 
     .Satp(Satp),

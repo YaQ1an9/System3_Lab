@@ -48,14 +48,6 @@ module BHT(
             begin
                 a = history_info[i][1];
                 b = history_info[i][0];
-//                history_info[i][0] = (!history_info[i][1] && !history_info[i][0] && Real_take)
-//                                  || (!history_info[i][1] && history_info[i][0] && Real_take)
-//                                  || (history_info[i][1] && history_info[i][0] && Real_take)
-//                                  || (history_info[i][1] && !history_info[i][0] && Real_take);
-                                  
-//                history_info[i][1] = (history_info[i][1] && history_info[i][0] && Real_take)
-//                                  || (history_info[i][1] && history_info[i][0] && !Real_take)
-//                                  || (history_info[i][1] && !history_info[i][0] && Real_take);
                 history_info[i][0] = (!a && !b && Real_take)
                                   || (!a && b && Real_take)
                                   || (a && b && Real_take)

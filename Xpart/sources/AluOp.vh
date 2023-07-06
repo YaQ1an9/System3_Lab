@@ -12,5 +12,6 @@ parameter   ADD  = 4'b0000,
 			AND  = 4'b0111,
 			NOP  = 4'b1111,
 			CMP  = 4'b1010,
-			CMP_U  = 4'b1001;
+			CMP_U  = 4'b1001,
+			ADDIW = 4'b1011;
 //`endif

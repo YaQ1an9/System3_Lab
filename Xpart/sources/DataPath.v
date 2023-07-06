@@ -157,11 +157,11 @@ module Datapath(
   .pc_new(pc_new_final)
   );
         
-//        Bubble bubble(
-//        .EX_Pred_take(EX_Pred_take),
-//        .Real_take(Jump),
-//        .bubble_sign(bubble_sign)
-//        );
+      //  Bubble bubble(
+      //  .EX_Pred_take(EX_Pred_take),
+      //  .Real_take(Jump),
+      //  .bubble_sign(bubble_sign)
+      //  );
         
 
   BTB btb(
@@ -255,20 +255,6 @@ module Datapath(
   .stall(stall),
   .imme(ID_imme)
   );
-    
-  // Stall stall_con(
-  // .EX_mem_read(EX_mem_read),
-  // .EX_pc_src(EX_pc_src),
-  // .MEM_pc_src(MEM_pc_src),
-  // .WB_pc_src(WB_pc_src),
-  // .EX_rd(EX_rd),
-  // .ID_rs1(ID_rs1),
-  // .ID_rs2(ID_rs2),
-  // .EX_csr_write(EX_csr_write),
-  // .EX_ecall_sign(EX_ecall_sign),
-  // .MEM_ecall_sign(MEM_ecall_sign),
-  // .stall(stall)
-  // );
     
   Control control ( 
   .op_code(ID_inst[6:0]),

@@ -1,31 +1,11 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2022/12/03 10:21:51
-// Design Name: 
-// Module Name: myRam
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module myRam(
     input clk,
     input we,
     input [2:0] size,
     input [63:0] write_data,
-    input [10:0] address,
+    input [14:0] address,
     output reg [63:0] read_data,
 
     //for mmu
@@ -34,15 +14,15 @@ module myRam(
     output [63:0]ph_pc
     //
     );
-    reg [63:0] ram [0:2048];
+    reg [63:0] ram [0:32767];
     integer i;
     localparam FILE_PATH = "C:/system3/my_lab/sys3_lab1/simcode/lab2-ram.coe";
     initial begin
-        $readmemh(FILE_PATH, ram);
-        // for(i = 0; i < 2048; i = i + 1)
-        // begin
-        //     ram[i][63:0] <= 64'h0;
-        // end
+        // $readmemh(FILE_PATH, ram);
+        for(i = 0; i <= 32767; i = i + 1)
+        begin
+            ram[i][63:0] <= 64'h0;
+        end
     end
     always @(posedge clk) begin
         
@@ -72,11 +52,15 @@ module myRam(
     wire [8:0] VPN1_va;
     wire [8:0] VPN2_va;
     wire [63:0] PPN2;
+    wire [63:0] PPN1;
+    wire [63:0] PPN0;
     assign VPN0_va = (vm_pc[20:12] & 9'h1ff);
     assign VPN1_va = (vm_pc[29:21] & 9'h1ff);
     assign VPN2_va = (vm_pc[38:30] & 9'h1ff);
     // assign VPN2_va = (9'h180 & 9'h1ff);
-    assign PPN2 = ram[{Satp[1:0],VPN2_va[8:0]}];
+    assign PPN2 = ram[{Satp[5:0],VPN2_va[8:0]}];
+    assign PPN1 = ram[{PPN2[5:0],VPN1_va[8:0]}];
+    assign PPN0 = ram[{PPN1[5:0],VPN0_va[8:0]}];
     assign ph_pc = (Satp[63:60] == 4'b1000) ? {8'b0, PPN2[53:28], vm_pc[29:0]} : vm_pc;
     //
 endmodule

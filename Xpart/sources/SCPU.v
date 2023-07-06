@@ -65,19 +65,6 @@ module SCPU(
         .pc_out(vm_pc_out)
     );
     
-    // MMU rom_mmu(
-    //     .clk(0),
-    //     .rst(rst),
-    //     .Satp(Satp),
-    //     .vm_addr(vm_pc),
-    //     .MMU_READY(MMU_ready),
-    //     .ph_addr(pc_out)
-    // );
-
-    // MMU ram_mmu(
-
-    // );
-
     Data_memory data_memory(
         .clk(clk),
         .addr(MEM_alu_result),
